@@ -2,7 +2,6 @@ name: Php CI/CD
 
 on:
   push:
-    branches: [ master ]
     tags:
       - 'php-*.*.*'
     paths: [ php/**, .github/workflows/ci-cd-php.yml ]

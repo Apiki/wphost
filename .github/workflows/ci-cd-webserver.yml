@@ -2,7 +2,6 @@ name: WebServer CI/CD
 
 on:
   push:
-    branches: [ master ]
     tags:
       - 'webserver-*.*.*'
     paths: [ webserver/**, .github/workflows/ci-cd-webserver.yml ]

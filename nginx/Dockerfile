@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:buster-slim
 
 MAINTAINER Apiki Team Maintainers "mesaque.silva@apiki.com"
 

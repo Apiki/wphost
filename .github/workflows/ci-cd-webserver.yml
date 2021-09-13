@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'webserver-*.*.*'
+      - 'webserver-*.*'
     paths: [ webserver/**, .github/workflows/ci-cd-webserver.yml ]
 
 defaults:

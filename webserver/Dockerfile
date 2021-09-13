@@ -1,15 +1,15 @@
-FROM php:7.4.11-fpm
+FROM php:7.4.23-fpm
 
 MAINTAINER Apiki Team Maintainers "mesaque.silva@apiki.com"
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV NPS_VERSION 1.13.35.2-stable
-ENV OPENRESTY_VERSION 1.17.8.2
-ENV OPEN_SSL 1.1.1d
+ENV OPENRESTY_VERSION 1.19.3.2
+ENV OPEN_SSL 1.1.1k
 ENV PSOL_VERSION 1.13.35.2-x64
-ENV WORDPRESS_VERSION 5.5.1
-ENV WORDPRESS_SHA1 d3316a4ffff2a12cf92fde8bfdd1ff8691e41931
+ENV WORDPRESS_VERSION 5.8.1
+ENV WORDPRESS_SHA1 21e50add5a51cd9a18610244c942c08f7abeccd8
 
 
 RUN apt-get update &&\
@@ -61,7 +61,7 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/error-logging.ini
 
 RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif iconv ftp
-RUN docker-php-ext-enable  redis imagick mcrypt memcached
+RUN docker-php-ext-enable redis imagick mcrypt memcached
 
 RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
 

@@ -11,10 +11,6 @@ RUN apk update && \
 
 RUN apk add --no-cache $PHPIZE_DEPS
 
-RUN cd /tmp \
-    && git clone https://git.php.net/repository/pecl/networking/ssh2.git && cd /tmp/ssh2 \
-    && phpize && ./configure && make && make install
-
 RUN echo '' | pecl install -f memcached
 RUN echo '' | pecl install -f imagick
 RUN echo '' | pecl install -f mcrypt

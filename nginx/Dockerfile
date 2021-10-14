@@ -5,7 +5,7 @@ MAINTAINER Apiki Team Maintainers "mesaque.silva@apiki.com"
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV NPS_VERSION 1.13.35.2-stable
-ENV OPENRESTY_VERSION 1.19.3.2
+ENV OPENRESTY_VERSION 1.19.9.1
 ENV OPEN_SSL 1.1.1k
 ENV PSOL_VERSION 1.13.35.2-x64
 

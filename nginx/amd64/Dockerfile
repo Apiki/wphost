@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV NPS_VERSION 1.13.35.2-stable
 ENV OPENRESTY_VERSION 1.19.9.1
-ENV OPEN_SSL 1.1.1k
+ENV OPEN_SSL 1.1.1l
 ENV PSOL_VERSION 1.13.35.2-x64
 
 RUN apt-get update \
@@ -39,7 +39,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} \
 --with-http_v2_module --with-openssl=/openresty-${OPENRESTY_VERSION}/openssl-${OPEN_SSL} \
 --with-ipv6 \
 --with-http_realip_module \
-&& /usr/bin/make && /usr/bin/make install || true
+&& /usr/bin/make && /usr/bin/make install
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \

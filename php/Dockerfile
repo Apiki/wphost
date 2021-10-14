@@ -1,4 +1,4 @@
-FROM php:7.4.21-fpm-alpine3.13
+FROM php:7.4.24-fpm-alpine3.13
 MAINTAINER mesaque.silva@apiki.com
 
 RUN apk update && \

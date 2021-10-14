@@ -39,7 +39,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} \
 --with-http_v2_module --with-openssl=/openresty-${OPENRESTY_VERSION}/openssl-${OPEN_SSL} \
 --with-ipv6 \
 --with-http_realip_module \
-&& /usr/bin/make && /usr/bin/make install
+&& /usr/bin/make && /usr/bin/make install || true
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \

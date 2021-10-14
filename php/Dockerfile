@@ -20,7 +20,7 @@ RUN pecl install -f libsodium
 RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
 
 RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif iconv ftp
-RUN docker-php-ext-enable redis ssh2 imagick mcrypt memcached
+RUN docker-php-ext-enable redis imagick mcrypt memcached
 
 RUN deluser www-data && deluser xfs
 RUN echo "www-data:x:33:33:Apiki WP Host,,,:/var/www:/bin/false" >> /etc/passwd && echo "www-data:x:33:www-data" >> /etc/group

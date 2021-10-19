@@ -3,8 +3,7 @@ name: Nginx multi arch CI/CD
 on:
   push:
     tags:
-      - 'nginx-*.*.*'
-    paths: [ nginx/amr64/**, .github/workflows/ci-cd-nginx.yaml ]
+      - 'nginx-vanilla-*.*.*'
 
 defaults:
   run:

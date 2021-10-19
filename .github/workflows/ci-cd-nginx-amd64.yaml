@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'nginx-pagespeed-*.*.*'
-    paths: [ nginx/amd64/**, .github/workflows/ci-cd-nginx-amd64.yaml ]
 
 defaults:
   run:

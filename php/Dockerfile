@@ -1,5 +1,4 @@
-FROM php:7.4.27-fpm-alpine3.15
-MAINTAINER mesaque.silva@apiki.com
+FROM php:8.1.5-fpm-alpine3.15
 
 RUN apk update && \
 	apk upgrade && \
@@ -15,11 +14,11 @@ RUN echo '' | pecl install -f memcached
 RUN echo '' | pecl install -f imagick
 RUN echo '' | pecl install -f mcrypt
 RUN echo '' | pecl install -f redis
-RUN pecl install -f libsodium
+RUN pecl install -f libsodium || true
 
 RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
 
-RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif iconv ftp
+RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif
 RUN docker-php-ext-enable redis imagick mcrypt memcached
 
 RUN deluser www-data && deluser xfs

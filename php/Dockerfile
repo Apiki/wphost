@@ -1,4 +1,4 @@
-FROM php:8.2.3-fpm-alpine3.17
+FROM php:7.4.33-fpm-alpine3.16
 
 ENV menchaced_version=3.2.0
 ENV redis_version=5.3.7

@@ -1,8 +1,9 @@
-name: Nginx CI/CD
+name: Nginx Default CI/CD
 
 on:
   push:
     tags:
+      - 'nginx-*.*.*.*'
       - 'nginx-*.*.*'
 
 defaults:

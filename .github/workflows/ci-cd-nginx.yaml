@@ -1,13 +1,13 @@
-name: Nginx multi arch CI/CD
+name: Nginx CI/CD
 
 on:
   push:
     tags:
-      - 'nginx-vanilla-*.*.*'
+      - 'nginx-*.*.*'
 
 defaults:
   run:
-    working-directory: nginx/amr64
+    working-directory: nginx/amd64
 
 jobs:
   docker:
@@ -39,8 +39,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          context: nginx/amr64/.
-          platforms: linux/amd64,linux/arm64
+          context: nginx/amd64/.
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

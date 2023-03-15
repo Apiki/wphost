@@ -1,5 +1,7 @@
 FROM openresty/openresty:1.21.4.1-6-buster-fat-amd64
 
+# mesaquesilva@apiki.com
+
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV NPS_VERSION 1.13.35.2-stable

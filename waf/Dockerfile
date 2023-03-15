@@ -2,10 +2,10 @@ FROM debian:buster-slim
 
 LABEL maintainer="Apiki Team Maintainers <mesaque.silva@apiki.com>"
 
-ENV NGINX_VERSION 1.19.6
-ENV OWASP_RULES 3.3.0
-ENV ModSecurity_Branch v3/master
-ENV OPEN_SSL 1.1.1i
+ENV NGINX_VERSION  1.22.1
+ENV OWASP_RULES v3.3.4
+ENV ModSecurity_Version v3.0.8
+ENV OPEN_SSL 1.1.1t
 
 RUN apt-get update && apt-get install -y --no-install-recommends bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlibc && rm -rf /var/lib/apt/lists/* &&  apt-get clean
 
@@ -13,7 +13,7 @@ RUN mkdir /source && cd /source
 
 RUN git clone https://github.com/ssdeep-project/ssdeep && cd ssdeep/ && ./bootstrap && ./configure && make && make install
 
-RUN cd /source && git clone https://github.com/SpiderLabs/ModSecurity --branch ${ModSecurity_Branch} --depth 1
+RUN cd /source && git clone https://github.com/SpiderLabs/ModSecurity --branch ${ModSecurity_Version} --depth 1
 RUN cd /source/ModSecurity && git submodule init && git submodule update 
 
 RUN cd /source/ModSecurity && sh build.sh && ./configure && make && make install
@@ -34,6 +34,8 @@ RUN cd /source/nginx-${NGINX_VERSION} \
 --add-module=/source/ngx_brotli \
 --with-http_v2_module --with-http_ssl_module --with-openssl=/source/openssl-${OPEN_SSL} \
 && make modules && make && make install 
+
+RUN git clone https://github.com/coreruleset/coreruleset.git --branch ${OWASP_RULES} --depth 1 /coreruleset/
 
 RUN rm -rf /source/ && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list
 

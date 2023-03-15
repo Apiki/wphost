@@ -5,6 +5,7 @@ on:
     tags:
       - 'nginx-*.*.*.*'
       - 'nginx-*.*.*'
+    paths: [ nginx/amd64/**, .github/workflows/ci-cd-nginx.yaml ]
 
 defaults:
   run:

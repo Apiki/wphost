@@ -10,5 +10,7 @@ cd crowdsec-custom-bouncer-v*
 RUN echo '#!/bin/bash' > /opt/crowdsec-custom.sh && chmod +x /opt/crowdsec-custom.sh
 RUN cd /crowdsec-custom-bouncer-v* && echo /opt/crowdsec-custom.sh | ./install.sh --binary /opt/crowdsec-custom.sh
 
+COPY --from=docker:dind /usr/local/bin/docker /usr/local/bin/
+
 WORKDIR /etc/crowdsec/bouncers
 CMD ["/usr/local/bin/crowdsec-custom-bouncer", "-c", "/etc/crowdsec/bouncers/crowdsec-custom-bouncer.yaml"]

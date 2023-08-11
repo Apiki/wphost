@@ -2,7 +2,7 @@ FROM debian:stable-slim
 
 ENV CS_BOUNCER_VERSION 0.0.17-rc5
 
-RUN apt update -y && apt install -y wget gettext systemctl
+RUN apt update -y && apt install -y wget gettext systemctl curl
 RUN wget https://github.com/crowdsecurity/cs-custom-bouncer/releases/download/v${CS_BOUNCER_VERSION}/crowdsec-custom-bouncer.tgz && \
 tar -xzf crowdsec-custom-bouncer.tgz && \
 cd crowdsec-custom-bouncer-v*

@@ -1,12 +1,10 @@
-FROM openresty/openresty:1.21.4.1-6-buster-fat-amd64
-
-# mesaquesilva@apiki.com
+FROM openresty/openresty:1.21.4.2-buster-fat
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV NPS_VERSION 1.13.35.2-stable
-ENV OPENRESTY_VERSION 1.21.4.1
-ENV OPEN_SSL 1.1.1t
+ENV OPENRESTY_VERSION 1.21.4.2
+ENV OPEN_SSL 1.1.1w
 ENV PSOL_VERSION 1.13.35.2-x64
 
 RUN apt-get update && apt-get -y install git wget  unzip make build-essential libpcre3-dev zlib1g-dev

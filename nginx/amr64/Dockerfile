@@ -1,11 +1,9 @@
-FROM debian:buster-slim
-
-MAINTAINER Apiki Team Maintainers "mesaque.silva@apiki.com"
+FROM openresty/openresty:1.21.4.2-buster-fat
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
-ENV OPENRESTY_VERSION 1.19.9.1
-ENV OPEN_SSL 1.1.1l
+ENV OPENRESTY_VERSION 1.21.4.2
+ENV OPEN_SSL 1.1.1w
 
 RUN apt-get update \
 	&& apt-get -y install libreadline-dev libncurses5-dev libpcre3-dev \

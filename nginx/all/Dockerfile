@@ -4,8 +4,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
 ENV OPENRESTY_VERSION 1.21.4.2
 ENV OPEN_SSL 1.1.1w
-ENV CFLAGS "-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
-ENV LDFLAGS "-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
+ENV CFLAGS "-march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
+ENV LDFLAGS "-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
 
 RUN apt-get update \
 && apt-get -y install libreadline-dev libncurses5-dev libpcre3-dev \
@@ -21,7 +21,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} \
 && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
 && cd ngx_brotli/deps/brotli \
 && mkdir out && cd out \
-&& cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. \
+&& cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. \
 && cmake --build . --config Release --target brotlienc
 
 RUN cd /openresty-${OPENRESTY_VERSION} \

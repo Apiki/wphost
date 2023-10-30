@@ -1,11 +1,13 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 LABEL maintainer="Apiki Team Maintainers <mesaque.silva@apiki.com>"
 
-ENV NGINX_VERSION  1.22.1
-ENV OWASP_RULES v3.3.4
-ENV ModSecurity_Version v3.0.8
-ENV OPEN_SSL 1.1.1t
+ENV NGINX_VERSION  1.25.3
+ENV OWASP_RULES v3.3.5
+ENV ModSecurity_Version v3.0.10
+ENV OPEN_SSL 1.1.1w
+ENV CFLAGS "-march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
+ENV LDFLAGS "-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
 
 RUN apt-get update && apt-get install -y --no-install-recommends bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlibc && rm -rf /var/lib/apt/lists/* &&  apt-get clean
 
@@ -22,7 +24,11 @@ RUN cd /source/ && git clone https://github.com/SpiderLabs/ModSecurity-nginx
 
 RUN cd /source/ && wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && tar -zxvf nginx-${NGINX_VERSION}.tar.gz
 
-RUN cd /source/ && git clone https://github.com/google/ngx_brotli && cd /source/ngx_brotli && git submodule update --init
+RUN cd /source/ && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
+&& cd ngx_brotli/deps/brotli \
+&& mkdir out && cd out \
+&& cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. \
+&& cmake --build . --config Release --target brotlienc
 
 RUN cd /source/ && wget https://www.openssl.org/source/openssl-${OPEN_SSL}.tar.gz \
 && tar -xzf openssl-${OPEN_SSL}.tar.gz 

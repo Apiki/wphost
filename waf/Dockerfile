@@ -9,7 +9,7 @@ ENV OPEN_SSL 1.1.1w
 ENV CFLAGS "-march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
 ENV LDFLAGS "-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
 
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlib1g-dev
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlib1g-dev cmake
 
 RUN mkdir /source && cd /source
 

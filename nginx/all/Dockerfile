@@ -1,4 +1,4 @@
-FROM openresty/openresty:1.21.4.2-bullseye-fat
+FROM openresty/openresty:1.25.3.1-2-bookworm-fat
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
@@ -9,7 +9,7 @@ ENV LDFLAGS "-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
 
 RUN apt-get update \
 && apt-get -y install libreadline-dev libncurses5-dev libpcre3-dev \
-libssl-dev perl make build-essential git wget zlib1g-dev libpcre3 unzip curl uuid-dev cmake
+libssl-dev perl make build-essential git wget zlib1g-dev libpcre3 unzip curl uuid-dev cmake libmaxminddb-dev
 
 RUN /usr/bin/wget https://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz && tar -xzf openresty-${OPENRESTY_VERSION}.tar.gz
 RUN cd /openresty-${OPENRESTY_VERSION} && /usr/bin/wget https://www.openssl.org/source/openssl-${OPEN_SSL}.tar.gz \
@@ -18,6 +18,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} && /usr/bin/wget https://www.openssl.org/
 RUN cd /openresty-${OPENRESTY_VERSION} \
 && git clone https://github.com/FRiCKLE/ngx_cache_purge.git ngx_cache_purge-2.3 \
 && git clone https://github.com/vozlt/nginx-module-vts.git \
+&& git clone https://salsa.debian.org/nginx-team/libnginx-mod-http-geoip2.git libnginx-mod-http-geoip2 \
 && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
 && cd ngx_brotli/deps/brotli \
 && mkdir out && cd out \
@@ -29,6 +30,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} \
 --add-module=/openresty-${OPENRESTY_VERSION}/ngx_cache_purge-2.3 \
 --add-module=/openresty-${OPENRESTY_VERSION}/nginx-module-vts \
 --add-module=/openresty-${OPENRESTY_VERSION}/ngx_brotli \
+--add-dynamic-module=/openresty-${OPENRESTY_VERSION}/libnginx-mod-http-geoip2 \
 --with-http_stub_status_module \
 --with-http_v2_module --with-openssl=/openresty-${OPENRESTY_VERSION}/openssl-${OPEN_SSL} \
 --with-ipv6 \

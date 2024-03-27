@@ -1,14 +1,29 @@
 # wphost
 
-
-
-## After update Dockerfile-8 this is a example of how to handle deploy on PHP
+## Handling deploys
 ```sh
 
-PREVIOUS_VERSION=8.2.3
-VERSION=8.2.13
-git commit -am  "update php from $PREVIOUS_VERSION to $VERSION"
+#Launch lightsail
+https://lightsail.aws.amazon.com/ls/webapp/home/instances
+
+#install docker
+https://docs.docker.com/engine/install/ubuntu/
+
+#prepare machine
+docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+docker buildx inspect --bootstrap
+
+#clone and edit as you need
+https://github.com/Apiki/wphost
+
+PREVIOUS_VERSION=1.21.4.2
+VERSION=1.25.3.1-2
+SERVICE=nginx
+git commit -am  "update $SERVICE from $PREVIOUS_VERSION to $VERSION"
 git push origin master
 
-docker buildx build --platform=linux/amd64,linux/arm64 --tag apiki/wphost:php-${VERSION} --push https://raw.githubusercontent.com/Apiki/wphost/master/php/Dockerfile-8
+#log on docker to push the image
+docker login
+#build
+docker buildx build --platform=linux/amd64,linux/arm64 --tag apiki/wphost:${SERVICE}-${VERSION} --push -f /home/ubuntu/wphost/${SERVICE}/all/Dockerfile .
 ```

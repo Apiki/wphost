@@ -25,5 +25,5 @@ git push origin master
 #log on docker to push the image
 docker login
 #build
-docker buildx build --platform=linux/amd64,linux/arm64 --tag apiki/wphost:${SERVICE}-${VERSION} --push -f /home/ubuntu/wphost/${SERVICE}/all/Dockerfile .
+nohup docker buildx build --platform=linux/amd64,linux/arm64 --tag apiki/wphost:${SERVICE}-${VERSION} --push -f ${PWD}/wphost/${SERVICE}/all/Dockerfile . &
 ```

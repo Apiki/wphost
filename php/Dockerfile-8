@@ -1,4 +1,4 @@
-FROM php:8.2.13-fpm-alpine3.19
+FROM php:8.3.10-fpm-alpine3.20
 
 ENV menchaced_version=3.2.0
 ENV redis_version=5.3.7
@@ -6,20 +6,31 @@ ENV mcrypt_version=1.0.6
 ENV imagick_version=3.7.0
 ENV libsodium_version=2.0.23
 
-RUN apk update && \
-	apk upgrade && \
-	apk add --no-cache freetype linux-headers libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev libxml2-dev curl-dev  libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev zlib-dev git zip bash vim sudo bind-tools libsodium-dev libssh2-dev imagemagick-dev libmcrypt-dev ghostscript ghostscript-dev icu icu-dev && \
-  docker-php-ext-configure gd --with-freetype --with-jpeg && \
-  NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \
-  docker-php-ext-install -j${NPROC} gd && \
-  apk del --no-cache freetype-dev libpng-dev libjpeg-turbo-dev
+RUN apk update && apk upgrade
+
+RUN apk add --no-cache freetype linux-headers libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev \
+  libxml2-dev curl-dev  libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev \
+  zlib-dev git zip bash vim sudo bind-tools libsodium-dev libssh2-dev imagemagick-dev libmcrypt-dev \
+  ghostscript ghostscript-dev icu icu-dev imagemagick ghostscript-fonts ghostscript bash
+
+RUN  docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN  NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \
+  docker-php-ext-install -j11 gd
+RUN  apk del --no-cache freetype-dev libpng-dev libjpeg-turbo-dev
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 RUN apk add --no-cache $PHPIZE_DEPS
 
+RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/refs/tags/${imagick_version}.tar.gz \
+    && tar --strip-components=1 -xf /tmp/imagick.tar.gz \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && echo "extension=imagick.so" > /usr/local/etc/php/conf.d/ext-imagick.ini 
+
 RUN echo '' | pecl install -f memcached-${menchaced_version}
-RUN echo '' | pecl install -f imagick-${imagick_version}
 RUN echo '' | pecl install -f mcrypt-${mcrypt_version}
 RUN echo '' | pecl install -f redis-${redis_version}
 RUN pecl install -f libsodium-${libsodium_version} || true
@@ -29,10 +40,14 @@ RUN echo '' | pecl install -f apcu
 
 RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
 
+RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <policy domain="coder" rights="read|write" pattern="{PS,PDF,XPS}" />\n</policymap>#' {} +
+
 RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop
 RUN docker-php-ext-enable redis imagick mcrypt memcached igbinary apcu ssh2
 
-RUN deluser www-data && deluser xfs
+RUN  rm -rf /tmp/*
+
+RUN deluser www-data
 RUN echo "www-data:x:33:33:Apiki WP Host,,,:/var/www:/bin/false" >> /etc/passwd && echo "www-data:x:33:www-data" >> /etc/group
 WORKDIR /var/www
 USER www-data

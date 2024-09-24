@@ -33,6 +33,18 @@ RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <poli
 RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop
 RUN docker-php-ext-enable redis imagick mcrypt memcached igbinary apcu ssh2
 
+RUN \
+  cd /tmp \
+  && export NEW_RELIC_AGENT_VERSION=10.15.0.4 \
+  && export NR_INSTALL_PLATFORM=$(ldd --version 2>&1 | grep -q musl && echo "linux-musl" || echo "linux") \
+  && curl -o newrelic-php-agent.tar.gz https://download.newrelic.com/php_agent/archive/${NEW_RELIC_AGENT_VERSION}/newrelic-php5-${NEW_RELIC_AGENT_VERSION}-linux-musl.tar.gz \
+  && tar xzf newrelic-php-agent.tar.gz \
+  && NR_INSTALL_USE_CP_NOT_LN=1 NR_INSTALL_SILENT=0 ./*/newrelic-install install \
+  && sed -ie 's/[ ;]*newrelic.daemon.start_timeout[[:space:]]=.*/newrelic.daemon.start_timeout = "5s"/' $(php-config --ini-dir)/newrelic.ini \
+  && sed -ie 's/[ ;]*newrelic.daemon.app_connect_timeout[[:space:]]=.*/newrelic.daemon.app_connect_timeout = "15s"/' $(php-config --ini-dir)/newrelic.ini \
+  && sed -ie 's/[ ;]*newrelic.enabled[[:space:]]=.*/newrelic.enabled = false/' $(php-config --ini-dir)/newrelic.ini \
+  && rm newrelic-php-agent.tar.gz && rm -rf newrelic-php5-*-linux
+
 RUN deluser www-data && deluser xfs
 RUN echo "www-data:x:33:33:Apiki WP Host,,,:/var/www:/bin/false" >> /etc/passwd && echo "www-data:x:33:www-data" >> /etc/group
 WORKDIR /var/www

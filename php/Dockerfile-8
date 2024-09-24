@@ -52,9 +52,9 @@ RUN \
   && curl -o newrelic-php-agent.tar.gz https://download.newrelic.com/php_agent/release/newrelic-php5-${NEW_RELIC_AGENT_VERSION}-${NR_INSTALL_PLATFORM}.tar.gz \
   && tar xzf newrelic-php-agent.tar.gz \
   && NR_INSTALL_USE_CP_NOT_LN=1 NR_INSTALL_SILENT=0 ./*/newrelic-install install \
-  && sed -ie 's/[ ;]*newrelic.daemon.start_timeout[[:space:]]=.*/newrelic.daemon.start_timeout[[:space:]]=5s/' $(php-config --ini-dir)/newrelic.ini \
-  && sed -ie 's/[ ;]*newrelic.daemon.app_connect_timeout[[:space:]]=.*/newrelic.daemon.app_connect_timeout[[:space:]]=15s/' $(php-config --ini-dir)/newrelic.ini \
-  && sed -ie 's/[ ;]*newrelic.enabled[[:space:]]=.*/newrelic.enabled[[:space:]]=false/' $(php-config --ini-dir)/newrelic.ini \
+  && sed -ie 's/[ ;]*newrelic.daemon.start_timeout[[:space:]]=.*/newrelic.daemon.start_timeout = "5s"/' $(php-config --ini-dir)/newrelic.ini \
+  && sed -ie 's/[ ;]*newrelic.daemon.app_connect_timeout[[:space:]]=.*/newrelic.daemon.app_connect_timeout = "15s"/' $(php-config --ini-dir)/newrelic.ini \
+  && sed -ie 's/[ ;]*newrelic.enabled[[:space:]]=.*/newrelic.enabled = false/' $(php-config --ini-dir)/newrelic.ini \
   && rm newrelic-php-agent.tar.gz && rm -rf newrelic-php5-*-linux
 
 RUN  rm -rf /tmp/*

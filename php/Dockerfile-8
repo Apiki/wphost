@@ -1,4 +1,4 @@
-FROM php:8.3.11-fpm-alpine3.20
+FROM php:8.3.13-fpm-alpine3.20
 
 ENV menchaced_version=3.2.0
 ENV redis_version=5.3.7
@@ -42,7 +42,7 @@ RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pa
 
 RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <policy domain="coder" rights="read|write" pattern="{PS,PDF,XPS}" />\n</policymap>#' {} +
 
-RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop
+RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop pdo_mysql
 RUN docker-php-ext-enable redis imagick mcrypt memcached igbinary apcu ssh2
 
 RUN \

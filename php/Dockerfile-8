@@ -1,8 +1,8 @@
-FROM php:8.3.13-fpm-alpine3.20
+FROM php:8.4.2-fpm-alpine3.20
 
 ENV menchaced_version=3.2.0
-ENV redis_version=5.3.7
-ENV mcrypt_version=1.0.6
+ENV redis_version=6.1.0
+ENV mcrypt_version=1.0.7
 ENV imagick_version=3.7.0
 ENV libsodium_version=2.0.23
 
@@ -11,7 +11,7 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache freetype linux-headers libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev \
   libxml2-dev curl-dev  libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev \
   zlib-dev git zip bash vim sudo bind-tools libsodium-dev libssh2-dev imagemagick-dev libmcrypt-dev \
-  ghostscript ghostscript-dev icu icu-dev imagemagick ghostscript-fonts ghostscript bash
+  ghostscript ghostscript-dev icu icu-dev imagemagick ghostscript-fonts ghostscript bash libheif
 
 RUN  docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN  NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \

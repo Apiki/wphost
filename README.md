@@ -62,6 +62,8 @@ ps aux | grep buildx
 
 # Crie uma tag no Git para a versão
 ```
+git add .
+git commit -m "Alterações no Dockerfile para a versão ${SERVICE}-${VERSION}"
 git tag -a ${SERVICE}-${VERSION} -m "Versão ${SERVICE} ${VERSION}"
 git push origin ${SERVICE}-${VERSION}
 ```

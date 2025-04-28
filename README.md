@@ -60,6 +60,12 @@ tail -f build.log
 ps aux | grep buildx
 ```
 
+# Crie uma tag no Git para a versão
+```
+git tag -a ${SERVICE}-${VERSION} -m "Versão ${SERVICE} ${VERSION}"
+git push origin ${SERVICE}-${VERSION}
+```
+
 ✅ Resultado Esperado
 A imagem apiki/wphost:waf-4.13.0 será construída para as plataformas amd64 e arm64.
 

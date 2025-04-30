@@ -2,7 +2,7 @@
 Este repositório/documentação automatiza o processo de build multi-plataforma (amd64 + arm64) para imagens Docker do projeto apiki/wphost.
 
 🚀 Requisitos
-- Instância AWS Lightsail rodando Ubuntu 22.04 LTS
+- Instância AWS com distro Ubuntu 22.04 LTS e Classe c6i.large
 - Docker e Docker Buildx instalados
 - Permissões de push para o repositório DockerHub (apiki/wphost)
 
@@ -13,13 +13,16 @@ Após conectar via SSH:
 # Instale o Docker:
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+sudo apt-get install -y qemu-user-static
 # Dê permissão ao seu usuário:
 sudo usermod -aG docker $USER
 newgrp docker
 # Ative suporte a multi-plataforma (QEMU):
 docker run --privileged --rm tonistiigi/binfmt --install all
 # Crie um builder com o Buildx:
-docker buildx create --use
+docker buildx create --name multiarch --use --driver docker-container
+docker buildx inspect --bootstrap
+
 ```
 
 🔐 Faça login no DockerHub
@@ -66,6 +69,7 @@ git add .
 git commit -m "Alterações no Dockerfile para a versão ${SERVICE}-${VERSION}"
 git tag -a ${SERVICE}-${VERSION} -m "Versão ${SERVICE} ${VERSION}"
 git push origin ${SERVICE}-${VERSION}
+git push origin master
 ```
 
 ✅ Resultado Esperado

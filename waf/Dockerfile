@@ -10,6 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlibc \
     && rm -rf /var/lib/apt/lists/*
 
+# Instala cmake mais recente (antes de usá-lo)
+RUN wget -O cmake.sh https://github.com/Kitware/CMake/releases/download/v3.27.7/cmake-3.27.7-linux-$(uname -m).sh && \
+    chmod +x cmake.sh && \
+    ./cmake.sh --skip-license --prefix=/usr && \
+    rm cmake.sh
+
 # Compila ssdeep
 RUN git clone https://github.com/ssdeep-project/ssdeep /source/ssdeep && \
     cd /source/ssdeep && ./bootstrap && ./configure && make && make install
@@ -30,6 +36,12 @@ RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -P /source/ && 
     wget https://github.com/openssl/openssl/releases/download/openssl-${OPEN_SSL}/openssl-${OPEN_SSL}.tar.gz -P /source/ && \
     tar -xzf /source/openssl-${OPEN_SSL}.tar.gz -C /source/
 
+# Constrói Brotli
+RUN cd /source/ngx_brotli/deps/brotli && \
+    mkdir -p out && cd out && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF .. && \
+    cmake --build . --config Release
+
 # Compila nginx com módulos
 RUN cd /source/nginx-${NGINX_VERSION} && \
     ./configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib/nginx/modules --conf-path=/etc/nginx/nginx.conf \
@@ -45,9 +57,8 @@ LABEL maintainer="Apiki Team Maintainers <mesaque.silva@apiki.com>"
 ENV OWASP_RULES v4.13.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpcre3 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates \
+    libpcre3 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
-
 
 # Copia apenas o que interessa da fase de build
 COPY --from=builder /etc/nginx /etc/nginx

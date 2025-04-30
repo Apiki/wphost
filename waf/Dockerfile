@@ -58,13 +58,14 @@ ENV OWASP_RULES v4.13.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcre3 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates git \
+    liblmdb0 liblua5.3-0 libfuzzy-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia apenas o que interessa da fase de build
 COPY --from=builder /etc/nginx /etc/nginx
 COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=builder /usr/lib/nginx /usr/lib/nginx
-COPY --from=builder /usr/local/lib/libmodsecurity* /usr/local/lib/
+COPY --from=builder /usr/local/modsecurity/lib/libmodsecurity* /usr/local/lib/
 COPY --from=builder /usr/local/bin/ssdeep /usr/local/bin/
 
 # OWASP CRS

@@ -1,27 +1,29 @@
-FROM php:8.3.15-fpm-alpine3.20
+# Estágio de build
+FROM php:8.4.12-fpm-alpine3.22 AS builder
 
 ENV menchaced_version=3.2.0
 ENV redis_version=6.1.0
-ENV mcrypt_version=1.0.7
-ENV imagick_version=3.7.0
+ENV imagick_version=3.8.0
 ENV libsodium_version=2.0.23
 
+# Instalar dependências de build
 RUN apk update && apk upgrade
 
 RUN apk add --no-cache freetype linux-headers libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev \
-  libxml2-dev curl-dev  libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev \
+  libxml2-dev curl-dev libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev \
   zlib-dev git zip bash vim sudo bind-tools libsodium-dev libssh2-dev imagemagick-dev libmcrypt-dev \
   ghostscript ghostscript-dev icu icu-dev imagemagick ghostscript-fonts ghostscript bash libheif
 
-RUN  docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN  NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \
   docker-php-ext-install -j11 gd
-RUN  apk del --no-cache freetype-dev libpng-dev libjpeg-turbo-dev
+RUN apk del --no-cache freetype-dev libpng-dev libjpeg-turbo-dev
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 RUN apk add --no-cache $PHPIZE_DEPS
 
+# Compilar extensões PECL
 RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/refs/tags/${imagick_version}.tar.gz \
     && tar --strip-components=1 -xf /tmp/imagick.tar.gz \
     && phpize \
@@ -31,20 +33,44 @@ RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/re
     && echo "extension=imagick.so" > /usr/local/etc/php/conf.d/ext-imagick.ini 
 
 RUN echo '' | pecl install -f memcached-${menchaced_version}
-RUN echo '' | pecl install -f mcrypt-${mcrypt_version}
 RUN echo '' | pecl install -f redis-${redis_version}
 RUN pecl install -f libsodium-${libsodium_version} || true
 RUN pecl install igbinary || true
 RUN echo '' | pecl install -f ssh2
 RUN echo '' | pecl install -f apcu
 
-RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
+# Instalar extensões PHP
+RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop pdo_mysql
+RUN docker-php-ext-enable redis imagick memcached igbinary apcu ssh2
 
+# Configurar ImageMagick
 RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <policy domain="coder" rights="read|write" pattern="{PS,PDF,XPS}" />\n</policymap>#' {} +
 
-RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop pdo_mysql
-RUN docker-php-ext-enable redis imagick mcrypt memcached igbinary apcu ssh2
+# Estágio final - imagem mínima
+FROM php:8.4.12-fpm-alpine3.22
 
+ENV menchaced_version=3.2.0
+ENV redis_version=6.1.0
+ENV imagick_version=3.8.0
+ENV libsodium_version=2.0.23
+
+# Instalar apenas dependências de runtime
+RUN apk update && apk upgrade
+
+RUN apk add --no-cache freetype libpng libjpeg-turbo \
+  libxml2 curl libmcrypt libpq cyrus-sasl libzip libmemcached msmtp pcre \
+  zlib bash vim sudo bind-tools libsodium libssh2 imagemagick \
+  ghostscript icu ghostscript-fonts libheif
+
+# Copiar extensões compiladas do builder
+COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+COPY --from=builder /usr/local/etc/php/php.ini /usr/local/etc/php/php.ini
+
+# Instalar WP-CLI
+RUN cd /usr/bin && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && mv /usr/bin/wp-cli.phar /usr/bin/wp && chmod +x /usr/bin/wp
+
+# Configurar New Relic
 RUN \
   cd /tmp \
   && export NEW_RELIC_AGENT_VERSION=$(curl -s https://download.newrelic.com/php_agent/release/ | grep -o '[1-9][0-9]\?\(\.[0-9]\+\)\{3\}' | head -n1) \
@@ -57,9 +83,25 @@ RUN \
   && sed -ie 's/[ ;]*newrelic.enabled[[:space:]]=.*/newrelic.enabled = false/' $(php-config --ini-dir)/newrelic.ini \
   && rm newrelic-php-agent.tar.gz && rm -rf newrelic-php5-*-linux
 
-RUN  rm -rf /tmp/*
-
+# Configurar usuário
 RUN deluser www-data
 RUN echo "www-data:x:33:33:Apiki WP Host,,,:/var/www:/bin/false" >> /etc/passwd && echo "www-data:x:33:www-data" >> /etc/group
+
+# Configurações PHP otimizadas
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=4000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.revalidate_freq=2" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Limpar cache e arquivos temporários
+RUN rm -rf /tmp/* /var/cache/apk/*
+
 WORKDIR /var/www
+
 USER www-data
+
+EXPOSE 9000
+
+CMD ["php-fpm"]

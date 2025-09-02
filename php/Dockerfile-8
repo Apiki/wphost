@@ -23,21 +23,13 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 RUN apk add --no-cache $PHPIZE_DEPS
 
-# Compilar extensões PECL
-RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/refs/tags/${imagick_version}.tar.gz \
-    && tar --strip-components=1 -xf /tmp/imagick.tar.gz \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install \
-    && echo "extension=imagick.so" > /usr/local/etc/php/conf.d/ext-imagick.ini 
-
 RUN echo '' | pecl install -f memcached-${menchaced_version}
 RUN echo '' | pecl install -f redis-${redis_version}
 RUN pecl install -f libsodium-${libsodium_version} || true
 RUN pecl install igbinary || true
 RUN echo '' | pecl install -f ssh2
 RUN echo '' | pecl install -f apcu
+RUN pecl install imagick-${imagick_version} || true
 
 # Instalar extensões PHP
 RUN docker-php-ext-install zip mysqli sockets soap calendar bcmath opcache exif intl shmop pdo_mysql
@@ -48,11 +40,6 @@ RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <poli
 
 # Estágio final - imagem mínima
 FROM php:8.4.12-fpm-alpine3.22
-
-ENV menchaced_version=3.2.0
-ENV redis_version=6.1.0
-ENV imagick_version=3.8.0
-ENV libsodium_version=2.0.23
 
 # Instalar apenas dependências de runtime
 RUN apk update && apk upgrade

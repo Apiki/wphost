@@ -12,7 +12,7 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache freetype linux-headers libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev \
   libxml2-dev curl-dev libmcrypt-dev libpq cyrus-sasl-dev libzip libzip-dev libmemcached-dev msmtp pcre-dev \
   zlib-dev git zip bash vim sudo bind-tools libsodium-dev libssh2-dev imagemagick-dev libmcrypt-dev \
-  ghostscript ghostscript-dev icu icu-dev imagemagick ghostscript-fonts ghostscript bash libheif
+  ghostscript ghostscript-dev icu icu-dev icu-data-full imagemagick ghostscript-fonts ghostscript bash libheif
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \
@@ -47,7 +47,7 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache freetype libpng libjpeg-turbo \
   libxml2 curl libmcrypt libpq cyrus-sasl libzip libmemcached msmtp pcre \
   zlib bash vim sudo bind-tools libsodium libssh2 imagemagick \
-  ghostscript icu ghostscript-fonts libheif
+  ghostscript icu icu-dev icu-data-full ghostscript-fonts libheif
 
 # Copiar extensões compiladas do builder
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/

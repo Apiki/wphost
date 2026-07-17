@@ -1,13 +1,13 @@
 # Fase 1: BUILD
-FROM debian:buster-slim AS builder
+FROM debian:bookworm-slim AS builder
 
-ENV NGINX_VERSION  1.28.0
-ENV OWASP_RULES v4.13.0
-ENV ModSecurity_Version v3.0.14
-ENV OPEN_SSL 3.5.0
+ENV NGINX_VERSION  1.30.4
+ENV OWASP_RULES v4.28.0
+ENV ModSecurity_Version v3.0.16
+ENV OPEN_SSL 3.5.7
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev zlibc \
+    bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre2-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala cmake mais recente (antes de usá-lo)
@@ -22,7 +22,7 @@ RUN git clone https://github.com/ssdeep-project/ssdeep /source/ssdeep && \
 
 # Compila ModSecurity
 RUN git clone https://github.com/SpiderLabs/ModSecurity --branch ${ModSecurity_Version} --depth 1 /source/ModSecurity && \
-    cd /source/ModSecurity && git submodule init && git submodule update && \
+    cd /source/ModSecurity && git submodule update --init --recursive && \
     cd /source/ModSecurity && sh build.sh && ./configure && make && make install
 
 # Prepara fontes do nginx + módulos
@@ -50,14 +50,14 @@ RUN cd /source/nginx-${NGINX_VERSION} && \
     make modules && make && make install
 
 # Fase 2: RUNTIME
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 
 LABEL maintainer="Apiki Team Maintainers <mesaque.silva@apiki.com>"
 
-ENV OWASP_RULES v4.13.0
+ENV OWASP_RULES v4.28.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpcre3 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates git \
+    libpcre3 libpcre2-8-0 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates git \
     liblmdb0 liblua5.3-0 libfuzzy-dev \
     && rm -rf /var/lib/apt/lists/*
 

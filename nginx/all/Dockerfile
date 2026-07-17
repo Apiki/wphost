@@ -1,9 +1,9 @@
-FROM openresty/openresty:1.27.1.2-0-bookworm-fat as builder
+FROM openresty/openresty:1.31.1.1-2-bookworm-fat as builder
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV NGINX_PATH /usr/local/openresty/nginx/conf
-ENV OPENRESTY_VERSION 1.27.1.2
-ENV OPEN_SSL 3.5.0
+ENV OPENRESTY_VERSION 1.31.1.1
+ENV OPEN_SSL 3.5.7
 ENV CFLAGS "-O2"
 ENV LDFLAGS "-Wl,-s"
 
@@ -74,7 +74,7 @@ RUN cd /openresty-${OPENRESTY_VERSION} \
     && make install
 
 # Imagem final
-FROM openresty/openresty:1.27.1.2-0-bookworm-fat
+FROM openresty/openresty:1.31.1.1-2-bookworm-fat
 
 # Instalar dependências necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \

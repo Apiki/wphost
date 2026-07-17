@@ -1,6 +1,9 @@
 📦 Apiki Wphost Builder (Lightsail Setup)
 Este repositório/documentação automatiza o processo de build multi-plataforma (amd64 + arm64) para imagens Docker do projeto apiki/wphost.
 
+> 📖 **Vai atualizar uma imagem?** Comece por **[MAINTAINING.md](MAINTAINING.md)** — o guia completo de como atualizar cada serviço, o que verificar e as armadilhas conhecidas. Histórico de versões em **[CHANGELOG.md](CHANGELOG.md)**.
+> Este README cobre o build numa instância AWS dedicada; o `MAINTAINING.md` cobre também o build **local** multi-arch (Docker Desktop + buildx).
+
 🚀 Requisitos
 - Instância AWS com distro Ubuntu 22.04 LTS e Classe c6i.large
 - Docker e Docker Buildx instalados

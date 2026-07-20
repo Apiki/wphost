@@ -49,6 +49,11 @@ RUN apk add --no-cache freetype libpng libjpeg-turbo \
   zlib bash vim sudo bind-tools libsodium libssh2 imagemagick \
   ghostscript icu icu-dev icu-data-full ghostscript-fonts libheif
 
+# Limite de disco do ImageMagick no pixel cache (runtime tem policy.xml propria,
+# nao herda o edit do estagio builder). Impede que uma unica conversao patologica
+# (imagem/PDF gigante ou decompression bomb) escreva temporario ilimitado em /tmp.
+RUN find /etc/ImageMagi* -name "policy.xml" -exec sed -i 's#</policymap>#  <policy domain="resource" name="disk" value="2GiB"/>\n</policymap>#' {} +
+
 # Copiar extensões compiladas do builder
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
@@ -85,10 +90,36 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
 # Limpar cache e arquivos temporários
 RUN rm -rf /tmp/* /var/cache/apk/*
 
+# Faxina de temporarios orfaos do ImageMagick (magick-*). Quando o worker php-fpm e
+# morto no meio de uma conversao (request_terminate_timeout/pm.max_requests), o
+# ImageMagick nao remove seu /tmp/magick-*. Como /tmp fica na camada gravavel do
+# container (nao e tmpfs nem bind), os orfaos incham /var/lib/containerd e enchem o
+# disco do host. Sem cron no container, a faxina roda no entrypoint (start + loop).
+RUN cat <<'EOF' > /usr/local/bin/apiki-entrypoint.sh && chmod 755 /usr/local/bin/apiki-entrypoint.sh
+#!/bin/sh
+# Limpeza imediata no start: nenhuma conversao viva ainda -> remove todos os orfaos.
+find /tmp -maxdepth 1 -type f -name 'magick-*' -delete 2>/dev/null || true
+# Faxina periodica em background: request_terminate_timeout mata o worker em <=180s,
+# logo nenhum magick-* com +15min pertence a conversao viva -> seguro remover.
+(
+  while true; do
+    sleep 300
+    find /tmp -maxdepth 1 -type f -name 'magick-*' -mmin +15 -delete 2>/dev/null || true
+  done
+) &
+# Segue o entrypoint oficial do PHP, mantendo php-fpm como PID 1.
+if command -v docker-php-entrypoint >/dev/null 2>&1; then
+  exec docker-php-entrypoint "$@"
+fi
+exec "$@"
+EOF
+
 WORKDIR /var/www
 
 USER www-data
 
 EXPOSE 9000
+
+ENTRYPOINT ["/usr/local/bin/apiki-entrypoint.sh"]
 
 CMD ["php-fpm"]

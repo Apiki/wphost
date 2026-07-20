@@ -7,6 +7,17 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-07-20
+
+### `php-8.5.8` — re-release: faxina de temporarios orfaos do ImageMagick
+Republicacao da tag `php-8.5.8` no Docker Hub (mesma versao de PHP/extensoes; conteudo sobrescrito) corrigindo um vazamento **sistemico da imagem** que enchia o disco do host.
+
+- **Causa (na imagem, nao no site):** ImageMagick sem limite de disco/temp + `/tmp` na camada gravavel do container + php-fpm matando/reciclando workers (`request_terminate_timeout=180s`, `pm.max_requests=500`) + **nenhum faxineiro de `/tmp`** -> arquivos `magick-*` orfaos (deixados quando o worker morre no meio da conversao) acumulam indefinidamente. Incidente de referencia: `pingback.com` (22,5 GB em 376 `magick-*`, disco a 95%).
+- **Fix (somente no `Dockerfile-8`):**
+  1. **Entrypoint auto-faxina** (`/usr/local/bin/apiki-entrypoint.sh`): remove `magick-*` no start e, em background, a cada 5 min os ociosos ha +15 min (worker morre em <=180s, entao +15 min nunca e conversao viva); encadeia no `docker-php-entrypoint` mantendo php-fpm como PID 1.
+  2. **Cap de disco do ImageMagick** no `policy.xml` do runtime stage: `<policy domain="resource" name="disk" value="2GiB"/>`.
+- Build local multi-arch (amd64 + arm64) com `--push`, sobrescrevendo a tag. Validado: PHP 8.5.8, extensoes carregadas, WP-CLI 2.12.0, entrypoint varrendo `/tmp`, cap ativo na policy. Tag git `php-8.5.8` reapontada para o novo commit.
+
 ## 2026-07-17
 
 Atualização das imagens principais para o latest estável, com build local multi-arch (amd64 + arm64) e publicação no Docker Hub.

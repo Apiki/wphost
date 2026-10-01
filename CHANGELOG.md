@@ -7,6 +7,22 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-10-01
+
+### `waf-4.29.0` — motor ModSecurity 3.0.17 + HTTP/3 (nginx 1.30.5)
+Tag mantem a sintaxe `waf-<versao do CRS>`, mas o valor desta imagem esta no **motor**, nao nas regras: a frota carrega o CRS do `webserver.tgz` (`/etc/nginx/owasp-crs` + `rules/` do host), nao do clone `/coreruleset` da imagem (que nada referencia).
+
+- nginx 1.30.4 → **1.30.5** (stable), com **`--with-http_v3_module`** novo (QUIC nativo via OpenSSL ≥ 3.5.1; sem quictls/BoringSSL).
+- ModSecurity v3.0.16 → **v3.0.17** (2026-09-29): 7 GHSA, inclui bypass de inspecao de response body por `Content-Type` em caixa mista, `htmlEntityDecode`, `base64DecodeExt` URL-safe, ponteiro nao inicializado no XML, nullptr em `@rx`, `filename*` em multipart.
+- ModSecurity-nginx: antes clonado de `master` sem pino; agora **pinado em v1.0.4** (`ENV ModSecurity_Nginx_Version`).
+- OpenSSL 3.5.7 → **3.5.9** (LTS). CRS do clone interno v4.28.0 → v4.29.0 (so `ENV OWASP_RULES`).
+- URLs dos repositorios trocadas de `SpiderLabs/*` para `owasp-modsecurity/*` (redirect do GitHub; evita depender dele).
+- Base continua `debian:bookworm-slim` (trixie exigiria PCRE2 no ModSecurity; adiado).
+- Publicada primeiro como `wafrc-4.29.0` (canario; o nome NAO casa com o `grep waf-` da role `lightsail`, que escolhe a maior tag `waf-*` para host novo) e promovida por `docker buildx imagetools create -t apiki/wphost:waf-4.29.0 apiki/wphost:wafrc-4.29.0`.
+- Validado: amd64+arm64 no Hub (digest `62caf13e`); smoke `nginx -V` = nginx/1.30.5, OpenSSL 3.5.9, `http_v2`+`http_v3`+brotli; `nginx -t` limpo com a config e o CRS 3.1.0 reais do apiki.com; canario em producao no apiki.com (OCI, 163.176.213.149) em 2026-10-01 16:33 -03:00 com ~1-2 s de indisponibilidade no `up -d`, headers de seguranca identicos ao baseline, ModSecurity-nginx v1.0.4 + libmodsecurity 3.0.17 carregando 818 regras; HTTP/3 ligado no mesmo host as 16:35 e validado pela internet (GET/POST/403/401 em `proto=3`, upgrade h2->h3 por Alt-Svc). E2E previo em Docker local: ModSecurity bloqueia igual em h2 e h3 (403 GET e POST).
+- Tag git `waf-4.29.0` (commit do release: `git rev-parse waf-4.29.0^{}`); tag Docker Hub `waf-4.29.0` = digest `62caf13e`.
+- **HTTP/3 na frota NAO esta ligado por esta imagem**: exige `listen 443 quic reuseport;` (uma vez por endereco, no `00-default`), `listen 443 quic;` nos demais, `add_header Alt-Svc 'h3=":443"; ma=86400' always;` TAMBEM dentro de `location /` (o `add_header Cache-Control` ali descarta os do server — hoje HSTS/X-Frame ja nao saem no HTML por isso), `firewall-cmd --add-port=443/udp` e UDP/443 em NSG/SG/Lightsail. Rollout em sessao separada.
+
 ## 2026-07-20
 
 ### `php-8.5.8` — re-release: faxina de temporarios orfaos do ImageMagick

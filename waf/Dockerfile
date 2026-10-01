@@ -1,10 +1,11 @@
 # Fase 1: BUILD
 FROM debian:bookworm-slim AS builder
 
-ENV NGINX_VERSION  1.30.4
-ENV OWASP_RULES v4.28.0
-ENV ModSecurity_Version v3.0.16
-ENV OPEN_SSL 3.5.7
+ENV NGINX_VERSION  1.30.5
+ENV OWASP_RULES v4.29.0
+ENV ModSecurity_Version v3.0.17
+ENV ModSecurity_Nginx_Version v1.0.4
+ENV OPEN_SSL 3.5.9
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre2-dev libssl-dev libtool libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev \
@@ -21,12 +22,12 @@ RUN git clone https://github.com/ssdeep-project/ssdeep /source/ssdeep && \
     cd /source/ssdeep && ./bootstrap && ./configure && make && make install
 
 # Compila ModSecurity
-RUN git clone https://github.com/SpiderLabs/ModSecurity --branch ${ModSecurity_Version} --depth 1 /source/ModSecurity && \
+RUN git clone https://github.com/owasp-modsecurity/ModSecurity --branch ${ModSecurity_Version} --depth 1 /source/ModSecurity && \
     cd /source/ModSecurity && git submodule update --init --recursive && \
     cd /source/ModSecurity && sh build.sh && ./configure && make && make install
 
 # Prepara fontes do nginx + módulos
-RUN git clone https://github.com/SpiderLabs/ModSecurity-nginx /source/ModSecurity-nginx && \
+RUN git clone https://github.com/owasp-modsecurity/ModSecurity-nginx --branch ${ModSecurity_Nginx_Version} --depth 1 /source/ModSecurity-nginx && \
     git clone https://github.com/google/ngx_brotli /source/ngx_brotli && \
     cd /source/ngx_brotli && git submodule update --init
 
@@ -46,7 +47,7 @@ RUN cd /source/ngx_brotli/deps/brotli && \
 RUN cd /source/nginx-${NGINX_VERSION} && \
     ./configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib/nginx/modules --conf-path=/etc/nginx/nginx.conf \
         --with-compat --with-http_realip_module --add-dynamic-module=/source/ModSecurity-nginx --add-module=/source/ngx_brotli \
-        --with-http_v2_module --with-http_ssl_module --with-openssl=/source/openssl-${OPEN_SSL} && \
+        --with-http_v2_module --with-http_v3_module --with-http_ssl_module --with-openssl=/source/openssl-${OPEN_SSL} && \
     make modules && make && make install
 
 # Fase 2: RUNTIME
@@ -54,7 +55,7 @@ FROM debian:bookworm-slim
 
 LABEL maintainer="Apiki Team Maintainers <mesaque.silva@apiki.com>"
 
-ENV OWASP_RULES v4.28.0
+ENV OWASP_RULES v4.29.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcre3 libpcre2-8-0 zlib1g libxml2 libyajl2 lua5.3 libcurl4-gnutls-dev geoip-bin locales iputils-ping ca-certificates git \

@@ -82,7 +82,7 @@ curl -sIL -o /dev/null -w '%{http_code}\n' "https://github.com/openssl/openssl/r
 | **php 8** | `php/Dockerfile-8` | `php:X.Y.Z-fpm-alpineA.B` | PHP (FROM ×2), `redis_version`, `imagick_version`, `menchaced_version`, `libsodium_version` | versão do PHP |
 | **php 7** | `php/Dockerfile-7` | `php:7.4.x-fpm-alpine` | idem + `mcrypt_version` | versão do PHP |
 | **nginx** | `nginx/all/Dockerfile` | `openresty/openresty:<ver>-N-bookworm-fat` | `OPENRESTY_VERSION` (FROM ×2 + ENV), `OPEN_SSL` | versão do OpenResty |
-| **waf** | `waf/Dockerfile` | `debian:bookworm-slim` | `NGINX_VERSION`, `ModSecurity_Version`, `OWASP_RULES`, `OPEN_SSL` | **versão do CRS** (`OWASP_RULES`) |
+| **waf** | `waf/Dockerfile` | `debian:bookworm-slim` | `NGINX_VERSION`, `ModSecurity_Version`, `ModSecurity_Nginx_Version`, `OWASP_RULES`, `OPEN_SSL` | **versão do CRS** (`OWASP_RULES`) |
 | **crowdsec** | `crowdsec/Dockerfile` | `debian:stable-slim` | `CS_BOUNCER_VERSION` | versão do bouncer |
 | **postgre-backup** | `postgre-backup/Dockerfile` | `alpine:3.x` | (client PG / aws-cli via apk) | `pgbackup-vN` |
 
@@ -143,6 +143,7 @@ docker run --rm apiki/wphost:nginx-<v> sh -c 'nginx -V 2>&1; nginx -t'
 #   confira: OpenSSL <esperado>, http_v3, brotli, geoip2, realip
 
 # waf: nginx stable + ModSecurity + CRS + módulo carrega
+#   confira tambem: nginx -V 2>&1 | grep -o -E 'http_v3_module|http_v2_module|OpenSSL [0-9.]+'  -> http_v3_module presente desde waf-4.29.0
 docker run --rm apiki/wphost:waf-<v> sh -c '
   nginx -v
   ls -la /usr/local/lib/libmodsecurity.so.*
@@ -171,23 +172,34 @@ Estas quebram o build; já foram resolvidas mas podem reaparecer em versões fut
 
 7. **git tags históricas incompletas.** Nem todo release antigo tem tag git (ex.: `php-8.4.12`, `php-8.3.x` e `pgbackup-v1` existem no Hub mas não no git). O **Docker Hub é a fonte de verdade** do que está publicado. Criar a tag git faz parte do fluxo ideal daqui pra frente.
 
+8. **Nunca publique uma tag `waf-*` de teste.** A role `lightsail` do apikihost-bot (`tasks/main.yml` ~l.1077) escolhe a imagem do waf de host novo por `curl hub | grep waf- | sort | tail -n1`: qualquer `waf-4.29.0-rc1` passa a ser usada em produção na hora. Canário = tag SEM o prefixo (`wafrc-<v>`), validar em um host, depois `docker buildx imagetools create -t apiki/wphost:waf-<v> apiki/wphost:wafrc-<v>` (retag no Hub, sem rebuild, mesmo digest).
+
+9. **CRS da frota não vem da imagem.** O `waf.conf` do host inclui `/etc/nginx/modsecurity.conf` -> `owasp-crs/crs-setup.conf` + `rules/*.conf` do `webserver.tgz` (bind mount); o `/coreruleset` clonado na imagem é inerte. Bump de regra = tarball + `crs-deploy-frota.sh`; bump de motor/bypass = imagem.
+
+10. **ModSecurity-nginx pinado.** Antes clonava `master` sem pino; agora `--branch ${ModSecurity_Nginx_Version}`. A cada bump de ModSecurity, conferir se há release novo do conector em `owasp-modsecurity/ModSecurity-nginx` (compila contra a lib).
+
+11. **`docker login` ANTES do `--push`, e nunca rode outro build no mesmo builder entre um push falho e a repetição.** Em out/2026 o push falhou por falta de credencial; um `--load` arm64 intermediário fez o GC do builder descartar as camadas amd64 e o retry recompilou tudo (~30 min de OpenSSL em QEMU). O login sem argumentos no Docker CLI 28 usa fluxo web por código de dispositivo.
+
+12. **Testar ModSecurity com `location { return 200; }` dá falso bypass.** `return` roda na fase rewrite, antes do handler do conector; teste contra `root`/`proxy_pass`. Medido: bloqueio idêntico em h2 e h3.
+
 ---
 
 ## 9. Pendências conhecidas (não fechadas)
 
 - **`php/Dockerfile-7`** tem alterações **não commitadas** (conversão para multi-stage, bumps redis 6.1.0 / imagick 3.8.0). Ainda não foi buildado/publicado.
 - **`postgre-backup/`** não está rastreada no git, embora a imagem `pgbackup-v1` já esteja no Hub (jan/2026). O código dessa imagem só existe localmente.
-- **waf**: avaliar migrar a base para `trixie` no futuro (exigiria substituir PCRE1 por PCRE2 na compilação do nginx).
+- **waf**: migrar a base para `trixie` exige `--with-pcre2` no ModSecurity e remover `libpcre3*` (adiado em out/2026).
+- **waf**: HTTP/3 está compilado desde `waf-4.29.0` mas **desligado na frota** (exige `listen 443 quic reuseport` no `00-default`, `listen 443 quic` nos demais, `Alt-Svc` também dentro de `location /`, `443/udp` no firewalld e UDP/443 em NSG/SG/Lightsail). Ligado só no apiki.com (canário, 2026-10-01). Rollout em sessão separada.
 
 ---
 
-## 10. Referência rápida — estado atual das versões (jul/2026)
+## 10. Referência rápida — estado atual das versões (out/2026)
 
 | Serviço | Versão | Base |
 |---|---|---|
 | php 8 | **8.5.8** | `php:8.5.8-fpm-alpine3.24` |
 | php 7 | 7.4.33 | `php:7.4.33-fpm-alpine3.16` |
 | nginx | **1.31.1.1** | `openresty/openresty:1.31.1.1-2-bookworm-fat` |
-| waf | **4.28.0** (CRS) — nginx 1.30.4, ModSecurity 3.0.16 | `debian:bookworm-slim` |
+| waf | **4.29.0** (CRS) — nginx 1.30.5 (+http_v3), ModSecurity 3.0.17, conector 1.0.4, OpenSSL 3.5.9 | `debian:bookworm-slim` |
 | crowdsec | 0.0.17-rc7 | `debian:stable-slim` |
 | postgre-backup | pgbackup-v1 | `alpine:3.19` |

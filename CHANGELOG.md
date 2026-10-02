@@ -7,6 +7,17 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-10-02
+
+### `waf-4.29.1` — HTTP/3 passa a entregar o header `Host` (patch no nginx)
+Mesmo nginx 1.30.5 / ModSecurity 3.0.17 / conector 1.0.4 / OpenSSL 3.5.9 do `waf-4.29.0`; muda SO o patch abaixo. O `.1` e revisao da imagem, nao do CRS (o clone interno segue `v4.29.0` e e inerte; a frota usa o CRS do `webserver.tgz`).
+
+- **Problema**: em HTTP/3 o cliente manda `:authority`, nao `Host` (RFC 9114 4.3.1). O modulo h2 do nginx sintetiza a linha `Host` ("compatibility for $http_host"); o h3 nao. Resultado: `$http_host` vazio nos logs e o ModSecurity sem `Host` -> CRS 920280 em TODA requisicao h3 (CRITICAL no CRS 4.29 = 403) e 920350 (Host = IP) cego. Upstream: nginx trac #2659 fechado como "esperado"; ModSecurity-nginx PR #364 aberto.
+- **Correcao**: `waf/patches/nginx-http3-host.patch` (aplicado com `patch -p1` no build): em `ngx_http_v3_process_request_header`, sem `Host` e com `:authority`, chama `ngx_http_v3_construct_host_header()` (copia do equivalente h2). O caso Host x `:authority` divergente continua dando 400 como antes. Sem segundo lookup de vhost (`ngx_http_process_host` sai cedo se o server ja foi resolvido).
+- **Validado**: A/B local com CRS 4.29 completo (imagem velha h3 = 403/920280; nova = 200, `$http_host` preenchido, 920350 volta igual ao HTTP/1.1); canario em producao no felipebazon.com (OCI) em 2026-10-02 com h3 ligado, zero 920280, dominio logado em linhas HTTP/3.0, SEM nenhuma exclusao de regra.
+- Publicada primeiro como `wafrc-4.29.0-h3host` e promovida por `docker buildx imagetools create -t apiki/wphost:waf-4.29.1 apiki/wphost:wafrc-4.29.0-h3host` (digest `f4a99d1a`, amd64+arm64). A role `lightsail` passa a usar esta tag em host novo.
+- **Manutencao**: o patch tem que ser reaplicado a cada bump de nginx (ver MAINTAINING, armadilha 13).
+
 ## 2026-10-01
 
 ### `waf-4.29.0` — motor ModSecurity 3.0.17 + HTTP/3 (nginx 1.30.5)

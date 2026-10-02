@@ -37,6 +37,12 @@ RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -P /source/ && 
     wget https://github.com/openssl/openssl/releases/download/openssl-${OPEN_SSL}/openssl-${OPEN_SSL}.tar.gz -P /source/ && \
     tar -xzf /source/openssl-${OPEN_SSL}.tar.gz -C /source/
 
+# HTTP/3: sintetiza o header Host a partir do :authority (o modulo h2 ja faz
+# isso; o h3 nao). Sem ele $http_host fica vazio e o ModSecurity nao ve Host
+# (CRS 920280 em toda requisicao h3). Remover quando o upstream resolver.
+COPY patches/ /source/patches/
+RUN cd /source/nginx-${NGINX_VERSION} && patch -p1 < /source/patches/nginx-http3-host.patch
+
 # Constrói Brotli
 RUN cd /source/ngx_brotli/deps/brotli && \
     mkdir -p out && cd out && \

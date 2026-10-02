@@ -1,0 +1,104 @@
+--- a/src/http/v3/ngx_http_v3_request.c	2026-10-02 10:28:38
++++ b/src/http/v3/ngx_http_v3_request.c	2026-10-02 10:28:38
+@@ -25,6 +25,7 @@
+ static ngx_int_t ngx_http_v3_process_request_header(ngx_http_request_t *r);
+ static ngx_int_t ngx_http_v3_cookie(ngx_http_request_t *r, ngx_str_t *value);
+ static ngx_int_t ngx_http_v3_construct_cookie_header(ngx_http_request_t *r);
++static ngx_int_t ngx_http_v3_construct_host_header(ngx_http_request_t *r);
+ static void ngx_http_v3_read_client_request_body_handler(ngx_http_request_t *r);
+ static ngx_int_t ngx_http_v3_do_read_client_request_body(ngx_http_request_t *r);
+ static ngx_int_t ngx_http_v3_request_body_filter(ngx_http_request_t *r,
+@@ -1046,19 +1047,29 @@
+         goto failed;
+     }
+ 
+-    if (r->headers_in.host && r->host_end) {
++    if (r->host_end) {
+ 
+         host.len = r->host_end - r->host_start;
+         host.data = r->host_start;
+ 
+-        if (r->headers_in.host->value.len != host.len
+-            || ngx_memcmp(r->headers_in.host->value.data, host.data, host.len)
+-               != 0)
+-        {
+-            ngx_log_error(NGX_LOG_INFO, c->log, 0,
+-                          "client sent \":authority\" and \"Host\" headers "
+-                          "with different values");
+-            goto failed;
++        if (r->headers_in.host) {
++            if (r->headers_in.host->value.len != host.len
++                || ngx_memcmp(r->headers_in.host->value.data, host.data,
++                              host.len)
++                   != 0)
++            {
++                ngx_log_error(NGX_LOG_INFO, c->log, 0,
++                              "client sent \":authority\" and \"Host\" headers "
++                              "with different values");
++                goto failed;
++            }
++
++        } else {
++            /* compatibility for $http_host, as in HTTP/2 */
++
++            if (ngx_http_v3_construct_host_header(r) != NGX_OK) {
++                return NGX_ERROR;
++            }
+         }
+     }
+ 
+@@ -1140,7 +1151,54 @@
+     }
+ 
+     *val = *value;
++
++    return NGX_OK;
++}
++
++
++static ngx_int_t
++ngx_http_v3_construct_host_header(ngx_http_request_t *r)
++{
++    ngx_table_elt_t            *h;
++    ngx_http_header_t          *hh;
++    ngx_http_core_main_conf_t  *cmcf;
+ 
++    static ngx_str_t host = ngx_string("host");
++
++    h = ngx_list_push(&r->headers_in.headers);
++    if (h == NULL) {
++        ngx_http_close_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
++        return NGX_ERROR;
++    }
++
++    h->hash = ngx_hash(ngx_hash(ngx_hash('h', 'o'), 's'), 't');
++
++    h->key.len = host.len;
++    h->key.data = host.data;
++
++    h->value.len = r->host_end - r->host_start;
++    h->value.data = r->host_start;
++
++    h->lowcase_key = host.data;
++
++    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
++
++    hh = ngx_hash_find(&cmcf->headers_in_hash, h->hash,
++                       h->lowcase_key, h->key.len);
++
++    if (hh == NULL) {
++        ngx_http_close_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
++        return NGX_ERROR;
++    }
++
++    if (hh->handler(r, h, hh->offset) != NGX_OK) {
++        /*
++         * request has been finalized already
++         * in ngx_http_process_host()
++         */
++        return NGX_ERROR;
++    }
++
+     return NGX_OK;
+ }
+ 

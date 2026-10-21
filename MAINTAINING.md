@@ -184,6 +184,8 @@ Estas quebram o build; já foram resolvidas mas podem reaparecer em versões fut
 
 13. **Patch nosso no nginx: `waf/patches/nginx-http3-host.patch`.** Faz o HTTP/3 sintetizar o header `Host` a partir do `:authority` (o h2 já faz; o h3 não, e sem ele o ModSecurity dispara CRS 920280 em toda requisição h3). A cada bump de `NGINX_VERSION`: (a) conferir se o upstream resolveu (nginx/nginx.org#121, ModSecurity-nginx PR #364) e, se sim, remover patch + `COPY`/`RUN patch`; (b) senão, se o `patch -p1` falhar o build quebra de propósito — rebasear em `src/http/v3/ngx_http_v3_request.c`; (c) validar com h3 contra CRS completo e arquivo estático (ver 12): h3 sem Host deve dar 200 e não 403. **Não ligar h3 em host sem esta imagem** nem trocar o patch por exclusão de regra.
 
+14. **Release de seguranca antes da imagem oficial.** A docker-library leva horas para publicar `php:X.Y.Z-fpm-alpine*` depois do php.net (em 21/10/2026 so havia a RC). Para nao esperar: clone sparse de `docker-library/php` (`X.Y/alpineA.B/fpm`), troque `PHP_VERSION`/`PHP_URL`/`PHP_SHA256` (sha256 do JSON do php.net; mantenha o bloco GPG) e use `docker buildx bake` com um target da base e `contexts = { "php:X.Y.Z-fpm-alpineA.B" = "target:<base>" }` no target do `Dockerfile-8`. O bake exige `--allow=fs.read=<dir>` para CADA contexto fora do diretorio do bake file (sem isso aborta antes de buildar). O `ERROR: Extension 'sodium' already loaded` do `pecl install libsodium || true` e esperado.
+
 ---
 
 ## 9. Pendências conhecidas (não fechadas)
@@ -199,7 +201,7 @@ Estas quebram o build; já foram resolvidas mas podem reaparecer em versões fut
 
 | Serviço | Versão | Base |
 |---|---|---|
-| php 8 | **8.5.8** | `php:8.5.8-fpm-alpine3.24` |
+| php 8 | **8.5.12** | `php:8.5.12-fpm-alpine3.24` (base montada da docker-library, ver armadilha 14) |
 | php 7 | 7.4.33 | `php:7.4.33-fpm-alpine3.16` |
 | nginx | **1.31.1.1** | `openresty/openresty:1.31.1.1-2-bookworm-fat` |
 | waf | **4.29.1** (CRS 4.29.0 + patch Host h3) — nginx 1.30.5 (+http_v3), ModSecurity 3.0.17, conector 1.0.4, OpenSSL 3.5.9 | `debian:bookworm-slim` |

@@ -7,6 +7,14 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-10-21
+
+### `php-8.5.12` — release de seguranca do PHP (php2shell, CVE-2026-109618 / CVE-2026-109619)
+- PHP 8.5.8 -> **8.5.12** (php.net, 21/10 14:00 UTC, tag `security`). Extensoes PECL inalteradas (ja no latest: memcached 3.4.0, redis 6.3.0, imagick 3.8.1, apcu/ssh2/igbinary sem pino); New Relic e WP-CLI 2.12.0 baixados no build.
+- **Base montada por nos**: na hora do release a `php:8.5.12-fpm-alpine3.24` oficial nao existia no Hub (so `8.5.12RC1`). Usado o Dockerfile oficial da docker-library (`8.5/alpine3.24/fpm`) com so `PHP_VERSION`/`PHP_URL`/`PHP_SHA256` trocados (sha256 `08bc2eba...1209` do php.net; GPG `Good signature` de Daniel Scherzer nas 2 arquiteturas), encadeado no `php/Dockerfile-8` por `docker buildx bake` com named context `target:` (ver MAINTAINING, armadilha 14).
+- Validado: digest do index `daef85a7`, amd64 + arm64; `php -v` = 8.5.12 nas duas; `php -m` identico ao do `php-8.5.8`; `php-fpm -t` ok; uid 33 `www-data`.
+- Quando a oficial `php:8.5.12-fpm-alpine3.24` sair, rebuild pelo fluxo padrao e opcional (mesma fonte e mesma versao).
+
 ## 2026-10-02
 
 ### `waf-4.29.1` — HTTP/3 passa a entregar o header `Host` (patch no nginx)

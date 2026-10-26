@@ -7,6 +7,17 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-10-26
+
+### `php-8.5.13` — gd com WebP (mesmo PHP 8.5.12; o `.13` e revisao da IMAGEM, nao do PHP)
+- **Nao existe PHP 8.5.13.** A tag foi escolhida de proposito para o rollout da frota tratar como "versao acima" da 8.5.12 (scripts de troca comparam a tag). O binario continua `PHP 8.5.12`.
+- Unica mudanca funcional: `gd` compilada com `--with-webp` (`imagewebp()`, `imagecreatefromwebp()`, `gd_info()["WebP Support"] = true`). Motivo: a imagem da Wauz/SonharPay (`php-fpm-custom:8.5.12`, `FROM apiki/wphost:php-8.5.12`) precisa recodificar uploads em WebP (PR #173 do `jsellos/sonharpay`) e a base nao tinha. `libwebp` ja vinha no runtime (dependencia do ImageMagick); passou a ser explicito, e `libwebp-dev` entra e sai do builder.
+- Base: a oficial `php:8.5.12-fpm-alpine3.24` (publicada no Hub em 25/10), fluxo padrao de build; o bake da armadilha 14 nao foi mais necessario.
+- Validado contra a `php-8.5.12` (digest `daef85a7`) nas 2 arquiteturas (amd64 + arm64): `php -v` = 8.5.12; `gd_info()["WebP Support"] = true`, `imagewebp()` escreve e `imagecreatefromwebp()` le; `php -m` IDENTICO (mesma lista, `gd` uma vez); `conf.d/` e `extensions/` identicos; apcu 5.1.28, igbinary 3.2.17RC1, imagick 3.8.1 (WEBP ok), memcached 3.4.0, redis 6.3.0, ssh2 1.5.0 iguais; WP-CLI 2.12.0; `php-fpm -t` ok; uid 33 `www-data`; entrypoint/CMD/WORKDIR iguais; 151 pacotes apk nas duas.
+- Deltas colaterais (nao sao da gd): Alpine 3.24.2 -> **3.24.3** pelo `apk upgrade` do Dockerfile (10 pacotes: alpine-release, bind 9.20.29->30, brotli 1.2.0->1.2.1, cups-libs r0->r1, curl/libcurl 8.22->8.23, libde265 1.0.18->1.1.3, **musl 1.2.6-r2->r3**) e New Relic **12.11.0.40 -> 12.12.0.41** (baixado sem pino no build). Retestar sessao em host kernel 3.10 no canario (defeito `pwritev2`/seccomp medido na r2).
+- Digest do index: `sha256:f7ee4a33487b7411954d31e20c7605bd1513c71d8f65e0ef1a37affcb6ebc4e2` (amd64 `fdfe8895`, arm64 `dd4823e2`). Base resolvida: `php:8.5.12-fpm-alpine3.24@sha256:4c2818074ec4...`.
+- Para a Wauz/SonharPay: o Dockerfile da instancia pode passar a `FROM apiki/wphost:php-8.5.13` (ou pelo digest acima) e manter so o Composer; `pdo_mysql` ja vem na base (sempre veio) e o bloco de rebuild da gd do briefing fica desnecessario.
+
 ## 2026-10-21
 
 ### `php-8.5.12` — release de seguranca do PHP (php2shell, CVE-2026-109618 / CVE-2026-109619)

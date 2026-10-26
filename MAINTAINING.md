@@ -186,6 +186,8 @@ Estas quebram o build; já foram resolvidas mas podem reaparecer em versões fut
 
 14. **Release de seguranca antes da imagem oficial.** A docker-library leva horas para publicar `php:X.Y.Z-fpm-alpine*` depois do php.net (em 21/10/2026 so havia a RC). Para nao esperar: clone sparse de `docker-library/php` (`X.Y/alpineA.B/fpm`), troque `PHP_VERSION`/`PHP_URL`/`PHP_SHA256` (sha256 do JSON do php.net; mantenha o bloco GPG) e use `docker buildx bake` com um target da base e `contexts = { "php:X.Y.Z-fpm-alpineA.B" = "target:<base>" }` no target do `Dockerfile-8`. O bake exige `--allow=fs.read=<dir>` para CADA contexto fora do diretorio do bake file (sem isso aborta antes de buildar). O `ERROR: Extension 'sodium' already loaded` do `pecl install libsodium || true` e esperado.
 
+15. **Tag `php-X.Y.Z` nem sempre e a versao do PHP.** `php-8.5.13` (out/2026) e PHP **8.5.12** com a `gd` recompilada com WebP: o `.13` foi escolhido para os scripts de rollout da frota (que comparam a tag) verem uma versao acima. Ao bumpar o PHP de verdade, conferir no Hub qual e a ultima tag `php-*` ANTES de escolher o numero (se o php.net publicar 8.5.13 real, a tag ja esta ocupada: usar `php-8.5.13-1` ou pular para a seguinte) e registrar no CHANGELOG o que o numero significa. `php -v` dentro da imagem e a fonte de verdade da versao do PHP.
+
 ---
 
 ## 9. Pendências conhecidas (não fechadas)
@@ -201,7 +203,7 @@ Estas quebram o build; já foram resolvidas mas podem reaparecer em versões fut
 
 | Serviço | Versão | Base |
 |---|---|---|
-| php 8 | **8.5.12** | `php:8.5.12-fpm-alpine3.24` (base montada da docker-library, ver armadilha 14) |
+| php 8 | **8.5.13** (imagem; o PHP e 8.5.12 + gd com WebP, ver CHANGELOG 2026-10-26) | `php:8.5.12-fpm-alpine3.24` (oficial) |
 | php 7 | 7.4.33 | `php:7.4.33-fpm-alpine3.16` |
 | nginx | **1.31.1.1** | `openresty/openresty:1.31.1.1-2-bookworm-fat` |
 | waf | **4.29.1** (CRS 4.29.0 + patch Host h3) — nginx 1.30.5 (+http_v3), ModSecurity 3.0.17, conector 1.0.4, OpenSSL 3.5.9 | `debian:bookworm-slim` |

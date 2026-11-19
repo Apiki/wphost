@@ -7,6 +7,17 @@ Para o processo de atualização, veja [MAINTAINING.md](MAINTAINING.md).
 
 ---
 
+## 2026-11-19
+
+### `php-8.5.13` — PHP 8.5.13 REAL (release de seguranca); a tag foi SOBRESCRITA
+- O php.net publicou a 8.5.13 em 19/11/2026 marcada como `security`. A tag `php-8.5.13` ja estava ocupada desde 26/10 (PHP 8.5.12 + gd WebP, entrada abaixo). Decisao do responsavel: manter o nome e **sobrescrever**; os hosts que ja tinham a tag precisam de `docker pull` + recreate para receber o PHP novo. Conferir por `php -v` ou digest, nunca pela tag.
+- Unica mudanca no Dockerfile: `FROM php:8.5.12-fpm-alpine3.24` -> `php:8.5.13-fpm-alpine3.24` (oficial, ja no Hub; tarball sha256 `607602ac...b785f` igual ao do php.net). gd com WebP e imagick mantidos (era o que a Wauz/SonharPay precisava).
+- Fluxo: build para a tag canario `rc-php8513`, smoke nas 2 arquiteturas, retag com `imagetools create` (mesmo digest, sem rebuild).
+- Validado em amd64 + arm64: `php -v` = 8.5.13; `php -m` IDENTICO ao da 8.5.12; `gd_info()["WebP Support"] = true` e `imagewebp()` escreve; imagick 3.8.1 escreve WEBP; apcu 5.1.28, igbinary 3.2.17RC1, memcached 3.4.0, redis 6.3.0; `opcache.jit=disable`; `php-fpm -t` ok; WP-CLI 2.12.0; uid 33; policy `disk 2GiB` presente.
+- Deltas colaterais (sem pino): Alpine 3.24.3 -> **3.24.4**, ImageMagick 7.1.2-34 -> **7.1.2-35**, libheif 1.23.4 -> 1.23.7, **ssh2 1.5.0 -> 1.6.1** (pecl sem versao), openssl 3.5.9-r1, musl 1.2.6-r3 (igual a da `.13` antiga).
+- Digest NOVO do index: `sha256:475abf22d834832e6400c3509516bd56bf39fa673a9ffce9f7f5df91872d2e5c` (amd64 `e5a151f7`, arm64 `cebb9e08`).
+- Digest ANTIGO (rollback, PHP 8.5.12 + gd WebP): `apiki/wphost@sha256:f7ee4a33487b7411954d31e20c7605bd1513c71d8f65e0ef1a37affcb6ebc4e2`.
+
 ## 2026-10-26
 
 ### `php-8.5.13` — gd com WebP (mesmo PHP 8.5.12; o `.13` e revisao da IMAGEM, nao do PHP)
